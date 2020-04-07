@@ -1,0 +1,5 @@
+n nord-drum-snare.wav
+k flume-snare_A_major.wav
+b puchy-snare-b_F.wav
+c hip-hop-trap-chop-snare_C_major.wav
+j drum-machine-snare.wav
