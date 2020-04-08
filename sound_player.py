@@ -21,6 +21,7 @@ class SoundPlayer(object):
             key, sound = key_sound[0], key_sound[1][:-1]
             self.key_map[ord(key)] = f'sounds/{sound}'
     
+    # Comment test
     def on_key_pressed(self, key):
         if not key in self.key_map.keys():
             return
