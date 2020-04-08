@@ -1,5 +1,6 @@
 import simpleaudio as sa
 import threading
+import time
 
 KEY_DISTRIBUTION_FILE = 'sounds/notes/key_distribution.txt'
 
@@ -11,6 +12,7 @@ class SoundPlayer(object):
     def __init__(self):
         self.threads = []
         self.key_map = {}
+        self.recording = []
         keys_file = open(KEY_DISTRIBUTION_FILE, 'r')
         lines = keys_file.readlines()
 
@@ -19,11 +21,14 @@ class SoundPlayer(object):
             key, sound = key_sound[0], key_sound[1][:-1]
             self.key_map[ord(key)] = f'sounds/{sound}'
     
+    # Comment test
     def on_key_pressed(self, key):
         if not key in self.key_map.keys():
             return
-    
+
+        self.recording.append((time.time(), key))
         self.play_file_on_separate_thread(self.key_map[key])
+
         
     def get_sound_for_key(self, key):
         return self.key_map[key]
