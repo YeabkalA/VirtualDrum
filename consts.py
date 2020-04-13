@@ -1,0 +1,4 @@
+# Colors
+RED = (0,0,255)
+
+AREA_BOUNDARY_THICKNESS = 2

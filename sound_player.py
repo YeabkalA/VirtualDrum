@@ -92,5 +92,3 @@ class SoundPlayer(object):
             recording.append([float(time), int(note)])
         
         self.play_recording_util(recording)
-
-    

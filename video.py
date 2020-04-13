@@ -2,6 +2,11 @@ import numpy as np
 import cv2
 from filter import filter
 import overlay_factory
+import area_listener
+import time
+import image_processor
+import ml_kit
+import sound_player
 
 # http://www.iamkarthi.com/opencv-experiment-virtual-on-screen-drums/
 
@@ -16,32 +21,43 @@ def read_transparent(file_name):
     return result
 
 cap = cv2.VideoCapture(0)
-
 ct = 0
+listeners = []
+img_process = image_processor.ImageProcessor()
+
+'''
+for offset in range(0, 100, 5):
+    for i in range(200):
+        listeners.append(area_listener.AreaListener((offset + i*10, i*10), 40))
+'''
+
+start_time = time.time()
+base_saved = False
+
+prev_time = start_time
+
+shape_printed = False
+al = area_listener.AreaListener((100,100), 240)
+sp = sound_player.SoundPlayer()
 while(True):
-    _, frame = cap.read()
-    alpha = 0.1
     
-    hihat = read_transparent('images/hihat.png')
-    hihat = cv2.resize(hihat, (hihat.shape[1]//3, hihat.shape[0]//3))
-    snare = read_transparent('images/snare3.png')
-    #snare = cv2.resize(snare, (snare.shape[1]//2, snare.shape[0]//2))
-    snare2 = read_transparent('images/snare2.png')
-    snare2 = cv2.resize(snare2, (snare2.shape[1]//2, snare2.shape[0]//2))
-    #drum = cv2.resize(drum, (drum.shape[1]//2, drum.shape[0]//2))
-    #drum = cv2.cvtColor(drum, cv2.COLOR_BGR2HSV )
+    _, frame = cap.read()
+    frame = img_process.horizontal_flip(frame)
+    #al = area_listener.AreaListener((1000,100), 240)
+    
+    
+    if not base_saved and time.time() - start_time > 4:
+        cv2.imwrite('passed.jpg', frame)
+        al.set_base_image(frame)
+        base_saved = True
+    al.draw_area(frame)
 
-    '''
-    factory = overlay_factory.OverlayFactory()
-    factory.set_base_image(frame)
-    factory.add_overlay(hihat, (600, 400))
-    factory.add_overlay(snare, (0, 400))
-    factory.add_overlay(snare2, (300, 400))
-
-    combined = factory.produce_overlay()
-    '''
+    if time.time() - prev_time > 0.1 and base_saved:
+        prev_time = time.time()
+        al.compare_difference_and_play_sound(frame)
 
     cv2.imshow('dst', frame)
+    cv2.moveWindow('dst', 0,0)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 # When everything done, release the capture

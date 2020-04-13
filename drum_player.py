@@ -10,7 +10,6 @@ class DrumPlayer(object):
     
     def run(self):
         cap = cv2.VideoCapture(0)
-
         while(True):
             _, frame = cap.read()
             cv2.imshow('Frame', frame)
