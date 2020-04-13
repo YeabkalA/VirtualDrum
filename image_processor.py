@@ -1,6 +1,27 @@
 import cv2
 import numpy as np
 import ml_kit
+import math
+
+# Gaussian blur parameters
+KERNEL_SIZE = (11, 11)
+SIGMA_X = 100.0
+
+# Unsharp weights
+ORIG_WEIGHT = 4.0
+GAUSSIAN_WEIGHT = -2.5
+
+
+# Canny thresholds
+THRESH_ONE = 100
+THRESH_TWO = 100
+
+# HoughLinesP parameters
+RHO = 1
+THETA = math.pi/180
+LINE_THRESH = 50
+MIN_LENGTH = 25.0
+MAX_GAP = 15.0
 
 class ImageProcessor(object):
     def __init__(self):
@@ -37,8 +58,10 @@ class ImageProcessor(object):
                         pos,
                         image_top[:, :, 3] / 255.0)
     
-    def preprocess_image(self, img):
-        grayImage = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    def preprocess_image(self, img, cvtToGray=False):
+        grayImage = img
+        if cvtToGray:
+            grayImage = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         
         gaussian_blurr = cv2.GaussianBlur(grayImage, ksize = (7, 7), sigmaX = 0)
         morphological_transformation = cv2.morphologyEx(gaussian_blurr, cv2.MORPH_OPEN, kernel = np.ones((3, 3), np.uint8))
@@ -88,3 +111,19 @@ class ImageProcessor(object):
     
     def horizontal_flip(self, img):
         return cv2.flip(img, 1)
+
+    def unsharp_mask(self, img):
+        gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        gaussian_img = cv2.GaussianBlur(gray_img, KERNEL_SIZE, SIGMA_X)
+        sharp_img = cv2.addWeighted(gray_img, ORIG_WEIGHT, gaussian_img,\
+            GAUSSIAN_WEIGHT, 0, gray_img)
+
+        return sharp_img
+    
+    def Hough_lines(self, img):
+        # Perform edge detection
+        edges = cv2.Canny(img, THRESH_ONE, THRESH_TWO)
+        # Get Hough lines
+        lines = cv2.HoughLinesP(edges, RHO, THETA, LINE_THRESH,\
+            minLineLength=MIN_LENGTH, maxLineGap=MAX_GAP)
+        return lines
