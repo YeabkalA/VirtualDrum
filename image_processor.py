@@ -66,9 +66,6 @@ class ImageProcessor(object):
         gaussian_blurr = cv2.GaussianBlur(grayImage, ksize = (7, 7), sigmaX = 0)
         morphological_transformation = cv2.morphologyEx(gaussian_blurr, cv2.MORPH_OPEN, kernel = np.ones((3, 3), np.uint8))
         thresholded_image = cv2.adaptiveThreshold(morphological_transformation, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, blockSize = 19, C=2)
-        
-
-        
 
         '''
         kernel = np.ones((5,5),np.uint8)
@@ -89,7 +86,7 @@ class ImageProcessor(object):
 
     def draw_all_contours(self, img, preprocess = False):
         if preprocess:
-            img = self.preprocess_image(img)
+            img = self.preprocess_image(img, True)
 
         contours_image = np.zeros((len(img),len(img[0]),3), np.uint8)
         
@@ -126,4 +123,5 @@ class ImageProcessor(object):
         # Get Hough lines
         lines = cv2.HoughLinesP(edges, RHO, THETA, LINE_THRESH,\
             minLineLength=MIN_LENGTH, maxLineGap=MAX_GAP)
+
         return lines

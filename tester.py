@@ -7,13 +7,12 @@ def ncr(n, r):
     denom = reduce(op.mul, range(1, r+1), 1)
     return numer / denom
 
-print(ncr(5,1))
 file = open('test_file', 'r')
 out = open('out', 'w')
 
 lines = file.readlines()
 lines = [x.strip() for x in lines]
-ind = 0
+ind = 1
 
 while ind < len(lines):
     exp = int(lines[ind])
@@ -21,7 +20,7 @@ while ind < len(lines):
     #print(exp)
 
     nums = []
-    while lines[ind] != '***':
+    while ind < len(lines) and not lines[ind].startswith('Case'):
 
         nums.append(list(map(int, lines[ind].split(' '))))
         ind += 1

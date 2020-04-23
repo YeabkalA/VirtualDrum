@@ -4,12 +4,26 @@ import cv2
 from PIL import Image
 from PIL import ImageChops
 
+import numpy as np
+
 BASE_IMG_DIR = 'test_imgs/base_img.jpg'
 NEW_IMG = 'test_imgs/curr_img.jpg'
 DIFF_IMG_DIR = 'test_imgs/image_Chops.jpg'
 
 def isColorWHite(col):
     return col[0] == 255
+
+def get_average_color(img):
+    bgr = np.asarray([0,0,0])
+    for i in range(len(img)):
+        for j in range(len(img[0])):
+            col = img[i][j]
+            bgr[0] += col[0]
+            bgr[1] += col[1]
+            bgr[2] += col[2]
+    
+    return bgr / (len(img) * len(img[0]))
+
 
 class ImageDifferenceTool(object):
     def __init__(self):
@@ -46,4 +60,11 @@ class ImageDifferenceTool(object):
         white_pixel_percentage = 100.0 * white_pixel_count/img_area
 
         return white_pixel_percentage > 3.0
+    
+    # img1 and img2 are color images.
+    def ColorDiffVector(self, img1, img2):
+        av_col1, av_col2 = get_average_color(img1), get_average_color(img2)
+        
+        return np.linalg.norm(av_col1 - av_col2)
+
 

@@ -26,6 +26,6 @@ class DrumPlayer(object):
         cv2.destroyAllWindows()
 
 if __name__ == '__main__':
-    # drum_player = DrumPlayer()
-    # drum_player.run()
+    drum_player = DrumPlayer()
+    drum_player.run()
     sound_player.SoundPlayer().play_file('recordings/test')

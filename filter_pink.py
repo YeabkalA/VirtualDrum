@@ -25,7 +25,6 @@ while(1):
                 frame[i, j] = np.asarray([255,255,255])
             else:
                 frame[i, j] = np.asarray([0,0,0])
-                #frame[i, j] = np.asarray([0,43,12])
     
     #cv2.imshow('frame', frame) 
     cv2.imshow('mask', frame) 
