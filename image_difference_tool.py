@@ -23,7 +23,7 @@ def get_average_color(img):
             bgr[2] += col[2]
     
     return bgr / (len(img) * len(img[0]))
-
+    
 
 class ImageDifferenceTool(object):
     def __init__(self):
@@ -39,7 +39,7 @@ class ImageDifferenceTool(object):
 
         return score
     
-    def DiffThroughImageChops(self):
+    def DiffImageThroughImageChops(self):
         img1 = Image.open(BASE_IMG_DIR)
         img2 = Image.open(NEW_IMG)
 
@@ -66,5 +66,3 @@ class ImageDifferenceTool(object):
         av_col1, av_col2 = get_average_color(img1), get_average_color(img2)
         
         return np.linalg.norm(av_col1 - av_col2)
-
-

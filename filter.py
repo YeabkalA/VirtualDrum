@@ -4,6 +4,21 @@ import cv2
 import image_processor
 
 ip = image_processor.ImageProcessor()
+
+def filter_black(img):
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        # for i in range(len(img)):
+        #         for j in range(len(img[0])):
+        #                 if img[i][j] < 50:
+        #                         img[i][j] = 0
+        #                 else:
+        #                         img[i][j] = 255
+
+        # _,thresh = cv2.threshold(img,25,255,cv2.THRESH_BINARY)
+        
+        # return thresh
+        return img
+
 # define the list of boundaries
 # Getting ranges = https://docs.opencv.org/3.0-beta/doc/py_tutorials/py_imgproc/py_colorspaces/py_colorspaces.html
 def filter(frame):

@@ -6,6 +6,10 @@ import numpy as np
 import sound_player
 import image_difference_tool
 import math
+import random
+from utils import get_saved_model
+import tensorflow as tf
+from ml_kit import NN
 
 class DrumArea(object):
     def __init__(self, top_left_corner, square_dim, sound):
@@ -14,6 +18,10 @@ class DrumArea(object):
         self.sound = sound
         self.bottom_left_corner = (self.top_left_corner[0] + self.square_dim, \
         self.top_left_corner[1] + self.square_dim)
+        self.sp = sound_player.SoundPlayer()
+
+    def playSound(self):
+        self.sp.play_key(ord(self.sound))
 
 class AreaListener(object):
     def __init__(self, drum_areas):
@@ -22,30 +30,45 @@ class AreaListener(object):
         self.sound_player = sound_player.SoundPlayer()
         self.img_dfc_tool = image_difference_tool.ImageDifferenceTool()
         self.prev_color_check = False
+        self.nn = NN('models/main_model')
     
+    # Draws each drum area in this AreaListener on the cv2 screen.
     def draw_area(self, img):
         for drum_area in self.drum_areas:
+            random_color = (random.randint(0, 200), random.randint(0, 200), random.randint(0,200))
             cv2.rectangle(img, drum_area.top_left_corner, drum_area.bottom_left_corner, consts.RED, consts.AREA_BOUNDARY_THICKNESS) 
     
     def check_for_change(self):
         pass
         
+    # Gets the part of `img` in the given `drum_area`.
     def get_area(self, img, drum_area):
         return img[drum_area.top_left_corner[1]:drum_area.bottom_left_corner[1], \
             drum_area.top_left_corner[0]:drum_area.bottom_left_corner[0]]
     
+    # Does the preprocessing of `img` to make it ready for testing.
     def get_testable_img(self, img):
         return self.get_area(self.img_process.unsharp_mask(img))
     
+    # Observed to be a weak measure, since the number of edge is arbitrary.
+    # The addition of two edges does not create a signficant number of 
+    # edges to the drum area.
     def number_of_edges(self, img):
         return len(self.img_process.Hough_lines(img))
+    
+    def get_all_target_areas(self, img):
+        rv = []
+        for drum_area in self.drum_areas:
+           rv.append(self.get_area(img, drum_area))
+        
+        return rv
     
     def set_base_image(self, img):
         # self.base_img = self.get_testable_img(img)
         # cv2.imwrite(image_difference_tool.BASE_IMG_DIR, self.base_img)
         self.base_imgs = []
         for drum_area in self.drum_areas:
-            self.base_imgs.append(self.get_area(img, drum_area))
+            self.base_imgs += self.get_all_target_areas(img)
     
     def compare_difference_and_play_sound(self, frame):
         for index, drum_area in enumerate(self.drum_areas):
@@ -53,20 +76,24 @@ class AreaListener(object):
             diff = self.img_dfc_tool.ColorDiffVector(area, self.base_imgs[index])
 
             print(diff)
-            
-            color_check = diff > 1
-
-            # print(diff)
-            # color_check = self.img_dfc_tool.ColorDiff(area)
+            color_check = diff > 30
 
             if color_check:
                 self.sound_player.play_key(ord(drum_area.sound))
+    
+    def check_through_nn(self, frame):
+        for index, drum_area in enumerate(self.drum_areas):
+            area = self.get_area(frame, drum_area)
+            area_bw = cv2.cvtColor(area, cv2.COLOR_BGR2GRAY)
+            prediction = self.nn.predict(area_bw)
+            cv2.imwrite('predicted.jpg', area_bw)
+            print(prediction)
+            if prediction == 0:
+                self.sound_player.play_key(ord(drum_area.sound))
 
-        #     if self.prev_color_check == False:
-        #         self.sound_player.play_key(ord('c'))
-        #         self.prev_color_check = True
-        # else:
-        #     self.prev_color_check = False
+            
+
+
        
 
         # # Through ImageChops
@@ -86,9 +113,6 @@ class AreaListener(object):
         # # print(f'Diff={diff}, num_lines_diff = ({num_lines_diff})')
         # if  diff > 7000:
         #     self.sound_player.play_key(ord('j'))
-
-    
-
     
 
         

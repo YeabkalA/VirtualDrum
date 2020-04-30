@@ -38,34 +38,25 @@ prev_time = start_time
 
 shape_printed = False
 
-drum_area1 = area_listener.DrumArea((100,600), 40, 'b')
-drum_area2 = area_listener.DrumArea((800,100), 40, 'j')
+drum_area1 = area_listener.DrumArea((100,600), 80, 'b')
+drum_area2 = area_listener.DrumArea((800,100), 80, 'j')
 al = area_listener.AreaListener([drum_area1, drum_area2])
 
 while(True):
     _, frame = cap.read()
     frame = img_process.horizontal_flip(frame)
-
-    frame = filter(frame)
-    for i in range(600, 641):
-        for j in range(100, 141):
-            col = frame[i, j]
-            if time.time() - prev_time > 3:
-                prev_time = time.time()
-                print(col)
-            if (col[2] <= 240 and col[2] >= 215) and (col[1] <= 170 and col[0] >= 130) and (col[0] <= 255 and col[0] >= 245):
-                frame[i, j] = np.asarray([255,255,255])
-            
+    frame_copy = frame.copy()
 
     if not base_saved and time.time() - start_time > 1:
         al.set_base_image(frame)
         base_saved = True
-    al.draw_area(frame)
+    al.draw_area(frame_copy)
 
     if base_saved:
-        al.compare_difference_and_play_sound(frame)
+        #al.compare_difference_and_play_sound(frame)
+        al.check_through_nn(frame)
 
-    cv2.imshow('dst', frame)
+    cv2.imshow('dst', frame_copy)
     cv2.moveWindow('dst', 0,0)
 
     #print(f'Compute time = {time.time() - compute_time_start}')
