@@ -18,17 +18,6 @@ import matplotlib.pyplot as plt
 
 def create_multiple_images(img):
     images = []
-    # for flip_factor in [-1, 0, 1]:
-    #     img0 = cv2.flip(img, flip_factor)
-    #     for rotate_factor in [cv2.ROTATE_90_CLOCKWISE, cv2.ROTATE_90_COUNTERCLOCKWISE, cv2.ROTATE_180]:
-    #         img1 = cv2.rotate(img0, rotate_factor)
-    #         for bright in [0.0, 0.1, 0.2]:
-    #             img3 = tf.image.adjust_brightness(img1, delta=bright)
-    #             for blur_kern in [(1, 1), (1, 3), (3, 1), (3, 3), (5, 5)]:
-    #                 img4 = cv2.blur(img3.numpy(), blur_kern)
-    #                 images.append(img4)
-
-    # return images
 
     for flip_factor in [-1, 0, 1]:
         img1 = cv2.flip(img, flip_factor)
@@ -53,7 +42,7 @@ def split_to_test_train(data, train_perc):
     
     return train_set, test_set
 
-def test_blurry_on_no_blurry_samples():
+def test_blurry():
     rv = []
 
     num_test_stick_samples = get_num_blurry_stick_samples()
@@ -147,68 +136,6 @@ def read_images():
 
     return read_images_modularized(directory_data)
 
-    '''
-    stick_images, nostick_images, blurry_stick_images = [], [], []
-    num_stick_samples = get_num_stick_samples()
-    num_nostick_samples = get_num_nostick_samples()
-    num_blurry_samples = get_num_blurry_stick_samples()
-
-    perc10_stick = num_stick_samples // 10
-    perc10_nostick = num_nostick_samples // 10
-    perc10_blurry = num_blurry_samples // 10
-
-    for i in range(1, num_stick_samples + 1):
-        if i % perc10_stick == 0:
-            print(f'Finished reading {round(i*100/num_stick_samples, 3)}% of stick data')
-        file_name = f'stick_sample/sample_stick_sample{i}.jpg'
-        img = cv2.imread(file_name, cv2.IMREAD_GRAYSCALE)
-
-        if len(img) == 0: # Image has been deleted
-            continue
-        expanded_images_set = create_multiple_images(img)
-        for new_image in expanded_images_set:
-            stick_images.append(np.asarray(new_image))
-
-    for i in range(1, num_nostick_samples + 1):
-        if i % perc10_nostick == 0:
-            print(f'Finished reading {round(i*100/num_nostick_samples, 3)}% of no stick data')
-        file_name = f'nostick_sample/sample_nostick_sample{i}.jpg'
-        img = cv2.imread(file_name, cv2.IMREAD_GRAYSCALE)
-
-        if len(img) == 0: # Image has been deleted
-            continue
-        expanded_images_set = create_multiple_images(img)
-        for new_image in expanded_images_set:
-            nostick_images.append(np.asarray(new_image))
-        
-    for i in range(1, num_blurry_samples + 1):
-        if i % perc10_blurry == 0:
-            print(f'Finished reading {round(i*100/num_nostick_samples, 3)}% of blurry data')
-        file_name = f'blurry_sample/sample_blurry_sample{i}.jpg'
-        img = cv2.imread(file_name, cv2.IMREAD_GRAYSCALE)
-
-        if len(img) == 0: # Image has been deleted
-            continue
-        expanded_images_set = create_multiple_images(img)
-        for new_image in expanded_images_set:
-            blurry_stick_images.append(np.asarray(new_image))
-    
-    print(f'Found a total of {len(stick_images)} stick images and {len(nostick_images)} nostick images and {len(blurry_stick_images)} blurry images')
-    stick_train, stick_test = split_to_test_train(stick_images, 80)
-    nostick_train, nostick_test = split_to_test_train(nostick_images, 80)
-    blurry_train, blurry_test = split_to_test_train(blurry_stick_images, 80)
-
-    train_images = np.asarray(stick_train + nostick_train + blurry_train)
-    train_labels = np.asarray(([0] * len(stick_train)) + ([1] * len(nostick_train)) + ([0] * len(blurry_train)))
-    test_images = np.asarray(stick_test + nostick_test + blurry_test)
-    test_labels = np.asarray(([0] * len(stick_test)) + ([1] * len(nostick_test)) + ([0] * len(blurry_test)))
-
-    print(f'Using {len(train_images)}  images for training, and {len(test_images)} for testing.')
-    print(f'Percentage used for testing = {len(test_images)/(len(train_images) + len(test_images))}')
-
-    return train_images, train_labels, test_images, test_labels
-    '''
-
 def create_nn():
     data = read_images()
     train_images, train_labels, test_images, test_labels = data
@@ -231,50 +158,17 @@ def create_nn():
 
     return model, data
     
-def test_nn(model, data, run_one_by_one_with_key=False, test_with_tf=False, testName='unnamed'):
-    if testName != 'unnamed':
-        print(f'Test: {testName}')
-
-    if test_with_tf:
-        _, test_acc = model.evaluate(data[0],  data[1], verbose=2)
-        print('\nTest accuracy:', test_acc, 'on data set of size', len(data[0]))
-        return
-
-    test_images, test_labels = data[0], data[1]
+def test_nn(model, data, testName='unnamed'):
+    print('TEST STARTED FOR DATASET:', testName, '...data set of size = ', len(data[0]))
     probability_model = tf.keras.Sequential([model, tf.keras.layers.Softmax()])
-    #predictions = probability_model.predict(test_images)
+    _, test_acc = model.evaluate(data[0],  data[1], verbose=2)
+    images, labels = data
+    predictions = [x[0] for x in probability_model.predict(images)]
 
-    success = 0.0
-    failure = 0.0
-    predictions = [[0 for i in range(2)] for j in range(2)]
-
-    feature_map = {0:[], 1:[]}
-    for i in range(len(test_images)):
-        feature_map[test_labels[i]].append(test_images[i])
-
-    for digit in range(2):
-        if digit not in feature_map.keys():
-            continue
-        for f in feature_map[digit]:
-            prediction = utils.predict(f, probability_model, preprocess=False)[0]
-            predictions[digit][int(prediction)] += 1
-            if run_one_by_one_with_key:
-                cv2.imshow(f'Actual {digit} predicted {prediction}', f)
-                cv2.waitKey(0)
-            if prediction == digit:
-                success += 1
-            else:
-                failure += 1
-            
-    print(success/(success + failure))
-    print(np.array(predictions))
-
-# orig_image = cv2.imread('stick_sample/sample_stick_sample5.jpg', cv2.IMREAD_GRAYSCALE)
-# new_images = create_multiple_images(orig_image)
-# print(len(new_images))
-
-
-
+    print(tf.math.confusion_matrix(labels, predictions))
+    print('\nTest accuracy:', test_acc)
+    print('------------------------------------------------------')
+    return
 
 # model, data = create_nn()
 # test_nn(model, (data[2], data[3]), run_one_by_one_with_key=False, test_with_tf=True)
@@ -283,9 +177,9 @@ def test_nn(model, data, run_one_by_one_with_key=False, test_with_tf=False, test
 
 model = tf.keras.models.load_model('models/main_model')
 data = read_images()
-test_nn(model, (data[2], data[3]), run_one_by_one_with_key=False, test_with_tf=True, testName='random test data')
-test_nn(model, test_specific_images(), run_one_by_one_with_key=False, test_with_tf=True, testName='test specific data')
-test_nn(model, test_blurry_on_no_blurry_samples(), run_one_by_one_with_key=False, test_with_tf=False, testName='blurry')
+test_nn(model, (data[2], data[3]), testName='random test data')
+test_nn(model, test_specific_images(), testName='test specific data')
+test_nn(model, test_blurry(), testName='blurry')
 
 '''
 cap = cv2.VideoCapture(0)
