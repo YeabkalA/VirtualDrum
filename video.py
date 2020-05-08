@@ -53,8 +53,8 @@ while(True):
     al.draw_area(frame_copy)
 
     if base_saved:
-        #al.compare_difference_and_play_sound(frame)
-        al.check_through_nn(frame)
+        al.compare_difference_and_play_sound(frame)
+        #l.check_through_nn(frame)
 
     cv2.imshow('dst', frame_copy)
     cv2.moveWindow('dst', 0,0)

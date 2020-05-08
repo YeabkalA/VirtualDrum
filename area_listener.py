@@ -10,22 +10,41 @@ import random
 from utils import get_saved_model
 import tensorflow as tf
 from ml_kit import NN
+import time
 
 class DrumArea(object):
     def __init__(self, top_left_corner, square_dim, sound):
+        self.last_played = 0
         self.top_left_corner = top_left_corner
         self.square_dim = square_dim
         self.sound = sound
         self.bottom_left_corner = (self.top_left_corner[0] + self.square_dim, \
         self.top_left_corner[1] + self.square_dim)
         self.sp = sound_player.SoundPlayer()
+        self.previous_beat_time = 0
+        self.is_clear = True
+        self.base_img = None
+        self.id = 0
 
     def playSound(self):
-        self.sp.play_key(ord(self.sound))
+        curr_millis = time.time() * 1000
+        if curr_millis - self.previous_beat_time >= consts.REASONABLE_DRUM_BEAT_INTERVAL_MILLIS and self.is_clear:
+            self.sp.play_key(ord(self.sound))
+            self.previous_beat_time = curr_millis
+    
+    def markPlayed(self, frame):
+        cv2.rectangle(frame, self.top_left_corner, self.bottom_left_corner, consts.RED, consts.FILL_THICKNESS) 
+    
+    def get_area(self, img):
+        area = img[self.top_left_corner[1]:self.bottom_left_corner[1], \
+            self.top_left_corner[0]:self.bottom_left_corner[0]]
+        return cv2.medianBlur(area, 5)
 
 class AreaListener(object):
     def __init__(self, drum_areas):
         self.drum_areas = drum_areas
+        for i in range(len(drum_areas)):
+            self.drum_areas[i].id = i
         self.img_process = image_processor.ImageProcessor()
         self.sound_player = sound_player.SoundPlayer()
         self.img_dfc_tool = image_difference_tool.ImageDifferenceTool()
@@ -56,19 +75,29 @@ class AreaListener(object):
     def number_of_edges(self, img):
         return len(self.img_process.Hough_lines(img))
     
-    def get_all_target_areas(self, img):
+    def get_all_target_areas(self, img, resize_dim=None):
         rv = []
         for drum_area in self.drum_areas:
-           rv.append(self.get_area(img, drum_area))
+            target_area = drum_area.get_area(img)
+            if resize_dim:
+                target_area = cv2.resize(target_area, resize_dim)
+            target_area = cv2.medianBlur(target_area, 5)
+            rv.append(target_area)
+            drum_area.base_img = target_area
         
         return rv
     
     def set_base_image(self, img):
         # self.base_img = self.get_testable_img(img)
         # cv2.imwrite(image_difference_tool.BASE_IMG_DIR, self.base_img)
-        self.base_imgs = []
-        for drum_area in self.drum_areas:
-            self.base_imgs += self.get_all_target_areas(img)
+        self.base_imgs = self.get_all_target_areas(img)
+    
+    def get_base_imgs(self, resize_dim=None):
+        print('Resize dim', resize_dim)
+        if resize_dim:
+            return [cv2.resize(x, resize_dim) for x in self.base_imgs]
+        else:
+            return self.base_imgs
     
     def compare_difference_and_play_sound(self, frame):
         for index, drum_area in enumerate(self.drum_areas):

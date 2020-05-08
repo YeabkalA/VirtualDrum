@@ -2,6 +2,7 @@ import simpleaudio as sa
 import threading
 import time
 import datetime
+from collections import deque 
 
 KEY_DISTRIBUTION_FILE = 'sounds/notes/key_distribution.txt'
 RECORDINGS_DIRECTORY = 'recordings'
@@ -13,6 +14,7 @@ def play_file(filename):
 
 class SoundPlayer(object):
     def __init__(self):
+        self.key_to_queue_map = {}
         self.threads = []
         self.key_map = {}
         self.recording = [[time.time(), START_NOTE]]
@@ -22,14 +24,35 @@ class SoundPlayer(object):
             key_sound = line.split(' ')
             key, sound = key_sound[0], key_sound[1][:-1]
             self.key_map[ord(key)] = f'sounds/{sound}'
+            self.key_to_queue_map[ord(key)] = deque()
+
+            # thread= threading.Thread(target=self.listen_key, args=(key,))
+            # thread.start()
+        print(self.key_to_queue_map)
     
+    def listen_key(self, key):
+        print('listen_key got as an argument:', key)
+        while True:
+            target_queue = self.key_to_queue_map[ord(key)]
+            if len(target_queue) == 0: continue
+            print('Found sth')
+            target_queue.popleft()
+            self.play_key(ord(key), sep_thread=False)
+    
+    def play_key_on_queue(self, key):
+        self.key_to_queue_map[key].append(1)
+
     # Comment test
-    def play_key(self, key):
+    def play_key(self, key, sep_thread=False):
         if not key in self.key_map.keys():
             return
 
         self.recording.append([time.time(), key])
-        self.play_file_on_separate_thread(self.key_map[key])
+        if sep_thread:
+            self.play_file_on_separate_thread(self.key_map[key])
+        else:
+            play_file(self.key_map[key])
+
     
     def print_logs(self):
         print(self.recording)
