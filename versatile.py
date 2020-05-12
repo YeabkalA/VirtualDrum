@@ -5,9 +5,9 @@ from image_difference_tool import ImageDifferenceTool
 import numpy as np
 #from multiprocessor import Multiprocessor
 
-SQUARE_DIM = 80
+SQUARE_DIM = 120
 RESIZE_DIM = (SQUARE_DIM, SQUARE_DIM)
-def test_live_effecient(square_dim=100):
+def test_live_effecient(square_dim=320):
     cap = cv2.VideoCapture(0)
     img_process2 = ImageProcessor()
 
@@ -16,9 +16,10 @@ def test_live_effecient(square_dim=100):
 
     
     test_max_black_pixel_count = 0
-    drum_area = DrumArea(top_left_corner=(0,0), square_dim=square_dim, sound='j')
-    drum_area2 = DrumArea(top_left_corner=(950,0), square_dim=square_dim, sound='c')
+    drum_area = DrumArea(top_left_corner=(100,10), square_dim=square_dim, sound='j')
+    drum_area2 = DrumArea(top_left_corner=(100,320), square_dim=square_dim, sound='c')
     drum_areas = [drum_area, drum_area2]
+    #drum_areas = [drum_area2]
 
     # drum_areas = []
     # for i in range(0, 900, 300):
@@ -51,7 +52,7 @@ def test_live_effecient(square_dim=100):
             else:
                 diff_gray[diff_gray > max_black_pixel[i]+10] = 255
                 diff_gray[diff_gray <= max_black_pixel[i]+10] = 0
-                cv2.circle(frame_orig, (500,100*(i+1)), 90, (100,140,10), -1)
+                #cv2.circle(frame_orig, (500,100*(i+1)), 90, (100,140,10), -1)
                 cv2.imshow(f'diff{i}', diff_gray)
 
                 num_whites = len(diff_gray[diff_gray == 255])

@@ -104,7 +104,6 @@ def test_blurry(adaptive_threshold=GLOBAL_ADAPTIVE_THRESHOLD):
     
     return np.asarray(images), np.asarray(labels)
 
-
 def test_specific_images(adaptive_threshold=GLOBAL_ADAPTIVE_THRESHOLD):
     rv = []
 
@@ -263,7 +262,7 @@ def create_nn(adaptive_threshold=GLOBAL_ADAPTIVE_THRESHOLD):
     print('model fit end')
     _, test_acc = model.evaluate(test_images,  test_labels, verbose=2)
     print('\nTest accuracy:', test_acc)
-    model.save('models/80-CV2DIFF')
+    model.save('models/80-CV2DIFF-2')
 
     return model, data
     
@@ -306,9 +305,9 @@ def test_live(model, adaptive_threshold=GLOBAL_ADAPTIVE_THRESHOLD):
     # drum_area3 = DrumArea(top_left_corner=(100, 400), square_dim=RESIZE_DIM, sound='k')
 
     drum_area1 = DrumArea(top_left_corner=(50, 50), square_dim=320, sound='c')
-    drum_area2 = DrumArea(top_left_corner=(800, 50), square_dim=80, sound='j')
+    drum_area2 = DrumArea(top_left_corner=(850, 50), square_dim=320, sound='j')
 
-    dareas = [drum_area1]
+    dareas = [drum_area1]#, drum_area2]
     area_listener2 = AreaListener(drum_areas=dareas)
     img_process2 = ImageProcessor()
     probability_model2 = tf.keras.Sequential([model, tf.keras.layers.Softmax()])
@@ -331,18 +330,8 @@ def test_live(model, adaptive_threshold=GLOBAL_ADAPTIVE_THRESHOLD):
         for drum_area in dareas:
             process_area_cv2Diff(drum_area, frame_orig, probability_model2)
             
-
-        # targeted_areas = area_listener2.get_all_target_areas(img=frame)
-        # area_id = 0
         area_listener2.draw_area(frame_color)
-        # area_listener2.draw_area(frame_color)
-        # for targeted_area in dareas:
-        #     # thread= threading.Thread(target=process_area, args=(targeted_area, area_id, frame, frame_color, probability_model2,))
-        #     # thread.start()
-        #     process_area(targeted_area, area_id, frame, frame_color, probability_model2)
         key = cv2.waitKey(1)
-        # if key == ord('s'):
-        #     pass
 
         cv2.imshow('Main', frame_color)
         cv2.waitKey(1)
@@ -356,6 +345,7 @@ def process_area_cv2Diff(drum_area, frame_orig, probability_model):
     diff_gray = np.asarray(cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY))
 
     file_name = f'tp{drum_area.id}.jpg'
+    print(file_name)
     cv2.imwrite(file_name, diff_gray)
     to_predict_img = cv2.imread(file_name, cv2.IMREAD_GRAYSCALE)
     # to_predict_img = tf.reshape(to_predict_img, [RESIZE_DIM, RESIZE_DIM, 1])
@@ -366,7 +356,11 @@ def process_area_cv2Diff(drum_area, frame_orig, probability_model):
     prediction, _ = utils.predict(to_predict_list[0], probability_model, preprocess=False, reshape_param=None)
 
     if prediction == 0:
+        drum_area.playSound()
+        drum_area.capture()
         print('Stick')
+    else:
+        drum_area.free()
 
 
 def process_area(targeted_area, frame, frame_color, probability_model2):
@@ -408,6 +402,6 @@ def show_thresholds():
 
 
 # show_thresholds()
-model = get_model_for_testing(train=False, modelName='models/80-CV2DIFF', test=True)
+model = get_model_for_testing(train=True, modelName='models/80-CV2DIFF-2', test=True)
 model.summary()
 test_live(model)

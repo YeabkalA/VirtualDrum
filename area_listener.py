@@ -32,6 +32,12 @@ class DrumArea(object):
             self.sp.play_key(ord(self.sound))
             self.previous_beat_time = curr_millis
     
+    def capture(self):
+        self.is_clear = False
+
+    def free(self):
+        self.is_clear = True
+    
     def markPlayed(self, frame):
         cv2.rectangle(frame, self.top_left_corner, self.bottom_left_corner, consts.RED, consts.FILL_THICKNESS) 
     

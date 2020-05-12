@@ -16,14 +16,16 @@ import os
 import random
 
 
-SQUARE_DIM_RESIZE = 80
+SQUARE_DIM_RESIZE = 320
 RESIZE_DIM = (SQUARE_DIM_RESIZE, SQUARE_DIM_RESIZE)
 
 DIVIDER = '======================='
 SAMPLES_TO_COLLECT = 2092
 # Images with no sticks; clear background. Used solely for testing.
 SQUARE_DIM = 320
-ROOT_SAMPLES_DIR = 'preprocessed/sample_80'
+#ROOT_SAMPLES_DIR = 'preprocessed/sample_80'
+ROOT_SAMPLES_DIR = 'stick_tip_samples'
+LABEL_FILE = ROOT_SAMPLES_DIR + 'labels'
 
 TEST_NO_STICK_DATATYPE = 'test_nostick_sample'
 # Images with no sticks; clear background.
@@ -49,6 +51,12 @@ FAR_STICK_IMAGES = 'far_stick_sample'
 PURELY_BLURRY_IMAGES = 'purely_blurry_sample'
 
 NO_STICK_WHITENESS_ADDED = 'no_stick_whiteness_added_sample'
+
+STICK_TIP_SAMPLE = 'stick_tip_sample'
+
+TEST_TIP = 'test_tip_sample'
+
+BLURRY_STICK_TIP_SAMPLE = 'blurry_stick_tip_sample'
 
 def weighted_sectional_density(img, make2D):
     return sectional_density(image=img, draw=False, w=4, h=4, make2D=make2D)
@@ -282,11 +290,20 @@ def test_augmentations(img):
         cv2.imshow(f'aug{ct}', aug)
         cv2.waitKey(0)
         ct += 1
+
+
     
 if __name__ == '__main__':
     #test_model_live(get_saved_model('models/main_model'))
     #print(get_last_file_name('stick_sample/'))
     #test_weighted_sectional_density()
-    #collect_preprocessed_samples(BLURRY_DATATYPE, 51, saveOnKey=True, add_random_whiteness=False)
+    #collect_preprocessed_samples(TEST_TIP, 500, saveOnKey=False, add_random_whiteness=False)
     #print_training_and_test_data_status()
-    test_augmentations(cv2.imread('preprocessed/sample_80/blurry_sample/sample_blurry_sample490.jpg', cv2.IMREAD_GRAYSCALE))
+    #test_augmentations(cv2.imread('preprocessed/sample_80/blurry_sample/sample_blurry_sample490.jpg', cv2.IMREAD_GRAYSCALE))
+
+    for i in range(501, 1500+1):
+        #os.system(f'rm preprocessed/sample_80/blurry_sample/sample_blurry_sample{i}.jpg')
+        os.system(f'rm stick_tip_samples/blurry_stick_tip_sample/sample_blurry_stick_tip_sample{i}.jpg')
+
+    #print(get_last_file_name(f'{ROOT_SAMPLES_DIR}/{STICK_TIP_SAMPLE}/'))
+

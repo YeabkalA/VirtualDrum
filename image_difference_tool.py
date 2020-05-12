@@ -115,6 +115,7 @@ class ImageDifferenceTool(object):
         img = img & diff
         
         return img, diff
+    
 
 def testColorDiffGrayscale():
     tool = ImageDifferenceTool()
