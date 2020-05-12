@@ -1,5 +1,3 @@
 # VirtualDrum
 
-Check
-###tf_tip.py
-###versatile.py
+Check out tf_tip.py for the NN approach and versatile.py for CV approach.
