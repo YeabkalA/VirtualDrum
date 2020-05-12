@@ -3,61 +3,46 @@ from image_processor import ImageProcessor
 import cv2
 from image_difference_tool import ImageDifferenceTool
 import numpy as np
-#from multiprocessor import Multiprocessor
 
-SQUARE_DIM = 120
-RESIZE_DIM = (SQUARE_DIM, SQUARE_DIM)
+RESIZE_DIM = (120, 120)
+THRESHOLD_NUM_WHITES = 2
+
 def test_live_effecient(square_dim=320):
     cap = cv2.VideoCapture(0)
-    img_process2 = ImageProcessor()
+    img_process = ImageProcessor()
 
-    base_set = False
     base_imgs = None
 
-    
     test_max_black_pixel_count = 0
-    drum_area = DrumArea(top_left_corner=(100,10), square_dim=square_dim, sound='j')
+    drum_area1 = DrumArea(top_left_corner=(100,10), square_dim=square_dim, sound='j')
     drum_area2 = DrumArea(top_left_corner=(100,320), square_dim=square_dim, sound='c')
-    drum_areas = [drum_area, drum_area2]
-    #drum_areas = [drum_area2]
+    drum_areas = [drum_area1, drum_area2]
 
-    # drum_areas = []
-    # for i in range(0, 900, 300):
-    #     for j in range(0, 900, 300):
-    #         drum_areas.append(DrumArea(top_left_corner=(i,j), square_dim=square_dim, sound='c'))
     area_listener = AreaListener(drum_areas = drum_areas)
     last_states = [False for i in range(len(drum_areas))]
     max_black_pixel = [0 for i in range(len(drum_areas))]
 
     while True:
         _, frame_orig = cap.read()
-        frame_orig = img_process2.horizontal_flip(frame_orig)
+        frame_orig = img_process.horizontal_flip(frame_orig)
         area_listener.draw_area(frame_orig)
         
-        if not base_set:
+        if not base_imgs:
             area_listener.set_base_image(frame_orig)
             base_imgs = area_listener.get_base_imgs(resize_dim=RESIZE_DIM)
-            base_set = True
     
-        target_areas = area_listener.get_all_target_areas(frame_orig, resize_dim=RESIZE_DIM)
-        for i,ta in enumerate(target_areas):
-            diff = cv2.absdiff(ta, base_imgs[i])
-            diff_gray = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
-            cv2.imshow(f'diff_abs{i}', diff_gray)
-            #print(diff_gray)
-            diff_gray = np.asarray(diff_gray)
-            diff_gray_flat = diff_gray.flatten()
+        target_areas = area_listener.get_all_target_areas(\
+            frame_orig, resize_dim=RESIZE_DIM)
+        for i,target_area in enumerate(target_areas):
+            diff = cv2.absdiff(target_area, base_imgs[i])
+            diff_gray = np.asarray(cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY))
             if test_max_black_pixel_count < 100:
-                max_black_pixel[i] = max(max_black_pixel[i], max(diff_gray_flat))
+                max_black_pixel[i] = max(max_black_pixel[i], max(diff_gray.flatten()))
             else:
-                diff_gray[diff_gray > max_black_pixel[i]+10] = 255
-                diff_gray[diff_gray <= max_black_pixel[i]+10] = 0
-                #cv2.circle(frame_orig, (500,100*(i+1)), 90, (100,140,10), -1)
-                cv2.imshow(f'diff{i}', diff_gray)
-
+                diff_gray[diff_gray > max_black_pixel[i]] = 255
+                diff_gray[diff_gray <= max_black_pixel[i]] = 0
                 num_whites = len(diff_gray[diff_gray == 255])
-                print((i, num_whites), max_black_pixel)
-                if num_whites > 2:
+                if num_whites > THRESHOLD_NUM_WHITES:
                     if not last_states[i]:
                         last_states[i] = True
                         drum_areas[i].playSound()

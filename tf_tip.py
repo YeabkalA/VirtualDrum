@@ -66,8 +66,6 @@ def read_labels(resize_dim=80):
     
         count = 0
         for file in file_center_map.keys():
-            # if count > 50:
-            #     break
             if count % 50 == 0:
                 print(f'Read {count} files')
             count += 1
@@ -90,52 +88,24 @@ def read_labels(resize_dim=80):
     
     return train_data, train_label
 
-def build_finger_model():
-    # Build the model
-    # model = tf.keras.Sequential([
-    #     hub.KerasLayer("https://tfhub.dev/google/imagenet/resnet_v1_50/feature_vector/4",
-    #                    trainable=False), 
-    #     tf.keras.layers.Dense(units=100, activation='relu') ,
-    #     tf.keras.layers.Dropout(rate=0.5),
-    #     tf.keras.layers.Dense(2)
-    # ])
-
-    # model = tf.keras.Sequential()
-    # model.add(tf.keras.layers.Dense(units=200, input_shape=(60000, 80, 80), activation='relu'))
-    # model.add(tf.keras.layers.Dropout(rate=0.5))
-    # model.add(tf.keras.layers.Dense(units=100, activation='relu'))
-    # model.add(tf.keras.layers.Dropout(rate=0.5))
-    # model.add(tf.keras.layers.Dense(units=2))
-
+def build_tip_detection_model():
     model = tf.keras.Sequential([
         tf.keras.layers.Flatten(input_shape=(80, 80,1)),
         tf.keras.layers.Dense(128, activation='relu'),
         tf.keras.layers.Dense(2)
     ])
-    #model.compile(optimizer=tf.keras.optimizers.SGD(),loss='msme',metrics=['mse'])
-    #model.compile(optimizer='adam', loss='mse', metrics=['mse'])
 
-    #model.build([None, 224, 224, 1])  # Batch input shape.
     model.compile(optimizer=tf.keras.optimizers.Adam(),
                   loss='mse',
                   metrics=['mse'])
-    print("Done building the network topology.")
-
-    # Read training and prediction data
-    print('about to read labels')
     train, train_labels = read_labels(80)
-    print('dividing...')
     train = np.asarray(train, dtype=np.float32)/ 255.0
-    
-    #train = train / 255.0
     print('Read data. Going to train on', len(train), 'images')
 
     # Train the network
     print("Starting to train the network, on", len(train), "samples.")
     model.fit(np.asarray(train, dtype=np.float32), np.asarray(train_labels), \
               epochs=30, batch_size=8)
-    # model.fit(np.asarray(train, dtype=np.float32), np.asarray(train_labels), \
-    #           epochs=3, batch_size=8, verbose=1, callbacks=[checkpoint])
     model.save("models/light-augmentations-tip-detecting-with-random-point-aug")
     print("Done training network.")
 
@@ -162,47 +132,25 @@ def brightness_tf(img, perc, dim):
 
     return img
 
-def dim(img, thresh, perc):
-    img = img.copy()
-    
-    #cv2.imshow('prev', img)
-    #img = cv2.resize(img, (80,80))
-    # for i in range(len(img)):
-    #     for j in range(len(img)):
-    #         if img[i][j] > thresh:
-    #             img[i][j] = int(img[i][j]*perc)
-    img = tf.reshape(img, [320, 320, 1])
-    img = tf.image.adjust_brightness(img, delta=perc)
-    img = img.numpy()
-    cv2.imshow(f'new{perc}', img)
-    cv2.waitKey(0)
-
 def test_live(model):
-    # if True:
-    #     return
     cap = cv2.VideoCapture(0)
-    # drum_area = DrumArea(top_left_corner=(900, 100), square_dim=RESIZE_DIM, sound='c')
-    # drum_area2 = DrumArea(top_left_corner=(100, 100), square_dim=RESIZE_DIM, sound='j')
-    # drum_area3 = DrumArea(top_left_corner=(100, 400), square_dim=RESIZE_DIM, sound='k')
-
     drum_area1 = DrumArea(top_left_corner=(50, 50), square_dim=320, sound='c')
 
-    dareas = [drum_area1]#, drum_area2]
-    area_listener2 = AreaListener(drum_areas=dareas)
-    img_process2 = ImageProcessor()
+    dareas = [drum_area1]
+    area_listener = AreaListener(drum_areas=dareas)
+    img_process = ImageProcessor()
 
     base_set = False
     base_imgs = None
 
     while True:
         _, frame_orig = cap.read()
-        frame_orig = img_process2.horizontal_flip(frame_orig)
+        frame_orig = img_process.horizontal_flip(frame_orig)
         frame_color = frame_orig.copy()
-        #frame = cv2.cvtColor(frame_orig, cv2.COLOR_BGR2GRAY)
         frame = frame_color.copy()
 
         if not base_set:
-            area_listener2.set_base_image(frame)
+            area_listener.set_base_image(frame)
             base_imgs = area_listener2.get_base_imgs()
             base_set = True
         
@@ -212,8 +160,6 @@ def test_live(model):
             diff = cv2.absdiff(target, orig)
             diff_gray = np.asarray(cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY))
 
-            cv2.imshow('Diff', diff_gray)
-
             diff_gray = cv2.resize(diff_gray, (80,80))
             diff_gray = tf.reshape(diff_gray, [80, 80, 1])
             center = model.predict(np.asarray([diff_gray.numpy()/255.0]))[0]
@@ -221,7 +167,6 @@ def test_live(model):
             cv2.imshow('Pred', img_copy)
             
             cv2.waitKey(1)
-
             
         area_listener2.draw_area(frame_color)
         key = cv2.waitKey(1)
@@ -237,26 +182,13 @@ def test_live(model):
         if key & 0xFF == ord('q'):
             break
 
-#test_augmentation()
-#model = build_finger_model()
+def run_model_on_test_data(model):
+    start = 1001
+    for i in range(start,start + 500):
+        img = f'preprocessed/sample_80/test_tip_sample/sample_test_tip_sample{i}.jpg'
+        print(i)
+        predict_for_image(img, model, i-start)
 
-# img_to_dim = cv2.imread('stick_tip_samples/stick_tip_sample/sample_stick_tip_sample150.jpg', cv2.IMREAD_GRAYSCALE)
-# for i in range(5,21):
-# #     dim(img_to_dim, 35, i/100)
-# # # model = build_finger_model()
-#model = tf.keras.models.load_model('models/light-augmentations-tip-detecting-with-blurry')
-model = tf.keras.models.load_model('models/light-augmentations-tip-detecting')
-#model = tf.keras.models.load_model('models/light-augmentations-tip-detecting-with-random-point-aug')
-
-
-# #test_live(model)
-# # # img = 'stick_tip_samples/stick_tip_sample/sample_stick_tip_sample150.jpg'
-
-start = 1001
-for i in range(start,start + 500):
-    img = f'preprocessed/sample_80/test_tip_sample/sample_test_tip_sample{i}.jpg'
-    print(i)
-    predict_for_image(img, model, i-start)
-
-# # predict_for_image(img)
-#
+if __name__ == '__main__':
+    model = tf.keras.models.load_model('models/light-augmentations-tip-detecting')
+    run_model_on_test_data(model)
