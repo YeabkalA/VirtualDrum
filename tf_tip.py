@@ -32,7 +32,7 @@ def get_augmentations(img, center):
 def get_augmentations_with_brightness_adjustments(img, center, dim):
     augs = []
 
-    non_brightness_augs = get_augmentations(img, center) + get_augmentations(img, (center[0] + 2, center[1] + 0)) + get_augmentations(img, (center[0] - 2, center[1] + 0)) + get_augmentations(img, (center[0] + 0, center[1] - 2)) + get_augmentations(img, (center[0] - 0, center[1] + 2)) 
+    non_brightness_augs = get_augmentations(img, center)
     for nba_data in non_brightness_augs:
         nba = nba_data[0]
         for bright in range(5,30,5):
